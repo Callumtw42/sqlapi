@@ -10,7 +10,8 @@ import (
 
 var db *sql.DB
 
-func mysqlConnect(user string, password string, host string, port string, database string) *sql.DB {
+//MysqlConnect connects to sql server
+func MysqlConnect(user string, password string, host string, port string, database string) *sql.DB {
 	db, err := sql.Open("mysql", user+":"+password+"@tcp("+host+":"+port+")/"+database)
 	if err != nil {
 		panic(err.Error())
@@ -46,8 +47,8 @@ func sqlConvertTypes(rows *sql.Rows) []interface{} {
 
 }
 
-func sel(res http.ResponseWriter, req *http.Request, sqlPath string) {
-
+//Sel parses results of SELECT statement in the passed sql file into JSON array and sends as http response
+func Sel(res http.ResponseWriter, req *http.Request, sqlPath string) {
 	//get query results
 	sql, err := ioutil.ReadFile(sqlPath)
 	handle(err)
