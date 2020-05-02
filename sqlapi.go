@@ -8,17 +8,18 @@ import (
 	"net/http"
 )
 
-var db *sql.DB
+//DB database
+var DB *sql.DB
 
 //MysqlConnect connects to sql server
-func MysqlConnect(user string, password string, host string, port string, database string) *sql.DB {
+func MysqlConnect(user string, password string, host string, port string, database string) {
 	db, err := sql.Open("mysql", user+":"+password+"@tcp("+host+":"+port+")/"+database)
 	if err != nil {
 		panic(err.Error())
 	} else {
 		fmt.Println("MySql Connected")
 	}
-	return db
+	DB = db
 }
 
 func handle(err error) {
@@ -53,7 +54,7 @@ func Sel(res http.ResponseWriter, req *http.Request, sqlPath string) {
 	sql, err := ioutil.ReadFile(sqlPath)
 	handle(err)
 
-	rows, err := db.Query(string(sql))
+	rows, err := DB.Query(string(sql))
 	handle(err)
 	defer rows.Close()
 
