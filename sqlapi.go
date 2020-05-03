@@ -50,7 +50,7 @@ func sqlConvertTypes(rows *sql.Rows) []interface{} {
 }
 
 //Sel parses results of SELECT statement in the passed sql file into JSON array and sends as http response
-func Sel(res http.ResponseWriter, req *http.Request, sqlPath string) {
+func Sel(sqlPath string) (data []map[string]interface{}) {
 	//get query results
 	query, err := ioutil.ReadFile(sqlPath)
 	handle(err)
@@ -58,9 +58,6 @@ func Sel(res http.ResponseWriter, req *http.Request, sqlPath string) {
 	rows, err := DB.Query(string(query))
 	handle(err)
 	defer rows.Close()
-
-	//array to store JSON objects
-	var data []map[string]interface{}
 
 	//column names
 	cols, _ := rows.Columns()
@@ -86,9 +83,7 @@ func Sel(res http.ResponseWriter, req *http.Request, sqlPath string) {
 		data = append(data, m)
 	}
 
-	//format response into json and send
-	res.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(res).Encode(data)
+	return data
 
 }
 
@@ -97,4 +92,10 @@ func Run(sql string) {
 	rows, err := DB.Query(string(sql))
 	handle(err)
 	defer rows.Close()
+}
+
+//JSONEncode formats response into json and send
+func JSONEncode(res http.ResponseWriter, data []map[string]interface{}) {
+	res.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(res).Encode(data)
 }
