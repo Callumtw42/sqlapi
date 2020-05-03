@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"reflect"
 )
 
 //DB database
@@ -35,12 +36,12 @@ func sqlConvertTypes(rows *sql.Rows) []interface{} {
 
 	for i := range rowInfo {
 		switch rowInfo[i].DatabaseTypeName() {
-		case "INT":
-			types[i] = new(int32)
-		case "VARCHAR":
-			types[i] = new(string)
+		case "INT", "BIGINT":
+			types[i] = new(sql.NullInt64)
+		case "DOUBLE", "FLOAT":
+			types[i] = new(sql.NullFloat64)
 		default:
-			types[i] = new(string)
+			types[i] = new(sql.NullString)
 		}
 	}
 
@@ -51,10 +52,10 @@ func sqlConvertTypes(rows *sql.Rows) []interface{} {
 //Sel parses results of SELECT statement in the passed sql file into JSON array and sends as http response
 func Sel(res http.ResponseWriter, req *http.Request, sqlPath string) {
 	//get query results
-	sql, err := ioutil.ReadFile(sqlPath)
+	query, err := ioutil.ReadFile(sqlPath)
 	handle(err)
 
-	rows, err := DB.Query(string(sql))
+	rows, err := DB.Query(string(query))
 	handle(err)
 	defer rows.Close()
 
@@ -64,20 +65,20 @@ func Sel(res http.ResponseWriter, req *http.Request, sqlPath string) {
 	//column names
 	cols, _ := rows.Columns()
 
+	//array of typed addresses to write results to
+	addresses := sqlConvertTypes(rows)
+
 	for rows.Next() {
 
-		//array of typed addresses to write results to
-		types := sqlConvertTypes(rows)
-
 		// Scan the result into the column pointers...
-		err := rows.Scan(types...)
+		err := rows.Scan(addresses...)
 		handle(err)
 
 		// Create our map, and retrieve the value for each column from the pointers slice,
 		// storing it in the map with the name of the column as the key.
 		m := make(map[string]interface{})
 		for i, colName := range cols {
-			val := types[i]
+			val := reflect.ValueOf(addresses[i]).Elem().Field(0).Interface()
 			m[colName] = val
 		}
 
@@ -89,4 +90,11 @@ func Sel(res http.ResponseWriter, req *http.Request, sqlPath string) {
 	res.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(res).Encode(data)
 
+}
+
+//Run executes SQL
+func Run(sql string) {
+	rows, err := DB.Query(string(sql))
+	handle(err)
+	defer rows.Close()
 }
