@@ -7,10 +7,16 @@ import (
 	"io/ioutil"
 	"net/http"
 	"reflect"
+
+	"github.com/callumtw42/datafns"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 //DB database
 var DB *sql.DB
+
+var equal = datafns.Equal
 
 //MysqlConnect connects to sql server
 func MysqlConnect(user string, password string, host string, port string, database string) {
